@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import streamlit as st
+from scipy.spatial.distance import pdist, squareform
 
 def _max_width_():
     max_width_str = f"max-width: 1000px;"
@@ -16,35 +17,26 @@ def _max_width_():
     )
 _max_width_()
 
-
-#st.set_page_config(layout='wide')
-
 df = pd.read_pickle('./data/df.pkl')
-df_std = pd.read_pickle('./data/df_std.pkl')
-features = ['distribution', 'shot_stopping', 'dominance', 'tenacity', 'awareness', 'power', 'mobility', 'composure', 'passing', 'dribbling', 'shooting',
+FEATURES = ['distribution', 'shot_stopping', 'dominance', 'tenacity', 'awareness', 'power', 'mobility', 'composure', 'passing', 'dribbling', 'shooting',
            'height_cm', 'preferred_foot_Left', 'preferred_foot_Right', 'overall']
-print(df.head())
 
 class PlayerRecommender():
 
     @st.cache
-    def _get_matrix(self):
-        return np.load('./data/matrix.npy')
+    def _build_similarity_matrix(self, df, metric='cosine'):
+        return squareform(pdist(df.values, metric=metric))
 
     def train(self, df, metric='cosine'):
         self.df = df
-        #self.df_norm = self.df[features].copy()
-        #self.df_norm = (self.df_norm - self.df_norm.min()) / (self.df_norm.max() - self.df_norm.min())
-        self.matrix = self._get_matrix()#squareform(pdist(self.df.values, metric=metric))
+        self.df_norm = self.df[FEATURES].copy()
+        self.df_norm = (self.df_norm - self.df_norm.min()) / (self.df_norm.max() - self.df_norm.min())
+        self.matrix = self._build_similarity_matrix(self.df_norm)#squareform(pdist(self.df.values, metric=metric))
         return self
 
     def predict(self, p_name, n_results=20, lwr=0, upr=99):
         # Locate row in similarity matrix and display most similar entries in that row
-        try:
-            idx = self.df.short_name[df.short_name.str.contains(p_name, case=False)].index[0]
-        except:
-            idx = 0
-            st.write('Name error! Defaulting to L. Messi.')
+        idx = self.df.loc[self.df.short_name == p_name].index[0]
         most_similar_idxs = np.argsort(self.matrix[idx, :]) 
         res = self.df.loc[most_similar_idxs, ['short_name', 'age', 'preferred_foot', 'Position', 'club', 'overall']][1:n_results]
         res.columns = ['Name', 'Age', 'Preferred Foot', 'Position', 'Club', 'FIFA Rating']
@@ -53,7 +45,7 @@ class PlayerRecommender():
 
 
 rec = PlayerRecommender()
-rec.train(df, df_std)
+rec.train(df)
 
 st.title('Player Recommender')
 
