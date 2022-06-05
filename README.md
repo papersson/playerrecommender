@@ -1,5 +1,5 @@
 # FIFA 19 Player Recommender
 
-[http://fifarecommender.herokuapp.com/](Demo)
+Demo: https://fifarecommender.herokuapp.com/
 
 ![FIFA 19 Player Recommender Example](fifarec.png)
